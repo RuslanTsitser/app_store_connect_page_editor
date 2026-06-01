@@ -258,7 +258,7 @@ export default function HomePage() {
           icon={<ApiOutlined />}
           onClick={() => setCredOpen(true)}
         >
-          API ключ
+          API Key
         </Button>
       </Header>
 
@@ -268,10 +268,10 @@ export default function HomePage() {
             type="warning"
             showIcon
             className="mb-4"
-            title="Добавьте API ключ App Store Connect, чтобы начать"
+            title="Add your App Store Connect API key to get started"
             action={
               <Button size="small" onClick={() => setCredOpen(true)}>
-                Настроить
+                Configure
               </Button>
             }
           />
@@ -285,7 +285,7 @@ export default function HomePage() {
           <Space wrap size="large" className="w-full" align="center">
             <Select
               showSearch
-              placeholder="Выберите приложение"
+              placeholder="Select app"
               style={{ minWidth: 320 }}
               value={appId ?? undefined}
               onChange={setAppId}
@@ -297,7 +297,7 @@ export default function HomePage() {
               }))}
             />
             <Select
-              placeholder="Версия"
+              placeholder="Version"
               style={{ minWidth: 280 }}
               value={versionId ?? undefined}
               onChange={setVersionId}
@@ -314,7 +314,7 @@ export default function HomePage() {
               }}
               disabled={!versionId}
             >
-              Обновить данные
+              Refresh data
             </Button>
           </Space>
           {selectedApp && selectedVersion && (
@@ -332,7 +332,7 @@ export default function HomePage() {
             items={[
               {
                 key: "version",
-                label: "Версия",
+                label: "Version",
                 children: (
                   <LocaleTabsEditor
                     locales={versionRows}
@@ -382,7 +382,7 @@ export default function HomePage() {
               },
               {
                 key: "screenshots",
-                label: "Скриншоты",
+                label: "Screenshots",
                 children: (
                   <ScreenshotsPanel
                     versionLocalizations={versionRows}

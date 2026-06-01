@@ -84,6 +84,7 @@ function reorderIds(
   shots: ScreenshotItem[],
   fromId: string,
   toId: string,
+  position: "before" | "after" = "before",
 ): string[] {
   const ids = shots.map((s) => s.id);
   const from = ids.indexOf(fromId);
@@ -91,7 +92,9 @@ function reorderIds(
   if (from < 0 || to < 0 || from === to) return ids;
   const next = [...ids];
   const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
+  let insertAt = position === "after" ? to + 1 : to;
+  if (from < insertAt) insertAt -= 1;
+  next.splice(insertAt, 0, moved);
   return next;
 }
 
@@ -105,8 +108,17 @@ function DeviceGroupSection({
   const { message } = App.useApp();
   const [busy, setBusy] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [dropPreview, setDropPreview] = useState<{
+    targetId: string;
+    position: "before" | "after";
+  } | null>(null);
+  const [localShots, setLocalShots] = useState<ScreenshotItem[]>(group.shots);
   const replaceTargetRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalShots(group.shots);
+  }, [group.shots]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -119,7 +131,7 @@ function DeviceGroupSection({
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Ошибка";
+            : "Error";
       message.error(text);
     } finally {
       setBusy(false);
@@ -129,8 +141,9 @@ function DeviceGroupSection({
   const handleUploadFiles = async (files: File[], replaceId?: string) => {
     if (replaceId) {
       await deleteScreenshot(replaceId);
+      setLocalShots((prev) => prev.filter((s) => s.id !== replaceId));
     }
-    let count = group.shots.length;
+    let count = localShots.length;
     if (replaceId) count -= 1;
 
     for (const file of files) {
@@ -138,7 +151,7 @@ function DeviceGroupSection({
       count += 1;
     }
     message.success(
-      files.length === 1 ? "Скриншот загружен" : `Загружено: ${files.length}`,
+      files.length === 1 ? "Screenshot uploaded" : `Uploaded: ${files.length}`,
     );
   };
 
@@ -161,11 +174,19 @@ function DeviceGroupSection({
     },
   };
 
-  const onDropReorder = async (targetId: string) => {
+  const onDropReorder = async (
+    targetId: string,
+    position: "before" | "after",
+  ) => {
     if (!dragId || dragId === targetId) return;
-    const ordered = reorderIds(group.shots, dragId, targetId);
+    const ordered = reorderIds(localShots, dragId, targetId, position);
+    const byId = new Map(localShots.map((s) => [s.id, s]));
+    const reorderedShots = ordered
+      .map((id) => byId.get(id))
+      .filter((s): s is ScreenshotItem => !!s);
+    setLocalShots(reorderedShots);
     await reorderScreenshots(group.setId, ordered);
-    message.success("Порядок сохранён");
+    message.success("Order saved");
   };
 
   return (
@@ -180,7 +201,7 @@ function DeviceGroupSection({
           )}
           {REQUIRED_DISPLAY_TYPES.has(group.displayType) && (
             <Tag color="red" className="ml-2">
-              Обязательный
+              Required
             </Tag>
           )}
           <Text type="secondary" className="ml-2 text-xs">
@@ -193,44 +214,65 @@ function DeviceGroupSection({
               size="small"
               icon={<PlusOutlined />}
               loading={busy}
-              disabled={group.shots.length >= 10}
+              disabled={localShots.length >= 10}
             >
-              Добавить
+              Add
             </Button>
           </Upload>
         </Space>
       </div>
 
-      {group.shots.length === 0 ? (
+      {localShots.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="Нет скриншотов в этом наборе"
+          description="No screenshots in this set"
           className="my-4"
         >
           <Upload {...uploadProps}>
             <Button type="primary" size="small" icon={<PlusOutlined />}>
-              Загрузить
+              Upload
             </Button>
           </Upload>
         </Empty>
       ) : (
         <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2">
-          {group.shots.map((shot) => (
+          {localShots.map((shot) => (
             <div
               key={shot.id}
               draggable={!busy}
               onDragStart={() => setDragId(shot.id)}
-              onDragEnd={() => setDragId(null)}
-              onDragOver={(e) => e.preventDefault()}
+              onDragEnd={() => {
+                setDragId(null);
+                setDropPreview(null);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const position =
+                  e.clientX < rect.left + rect.width / 2 ? "before" : "after";
+                setDropPreview({ targetId: shot.id, position });
+              }}
               onDrop={(e) => {
                 e.preventDefault();
-                void run(() => onDropReorder(shot.id));
+                const position =
+                  dropPreview?.targetId === shot.id
+                    ? dropPreview.position
+                    : "before";
+                void run(() => onDropReorder(shot.id, position));
+                setDropPreview(null);
               }}
-              className={`flex shrink-0 flex-col items-center w-[124px] rounded border border-transparent p-1 transition-colors ${
+              className={`relative flex shrink-0 flex-col items-center w-[124px] rounded border border-transparent p-1 transition-colors ${
                 dragId === shot.id ? "border-blue-400 bg-blue-50" : ""
               }`}
             >
-              <Tooltip title="Перетащите для смены порядка">
+              {dropPreview?.targetId === shot.id && dragId !== shot.id && (
+                <div
+                  className={`absolute top-0 bottom-0 z-10 w-[3px] rounded bg-blue-500 ${
+                    dropPreview.position === "before" ? "left-[-4px]" : "right-[-4px]"
+                  }`}
+                />
+              )}
+              <Tooltip title="Drag to reorder">
                 <HolderOutlined className="mb-1 cursor-grab text-gray-400 active:cursor-grabbing" />
               </Tooltip>
               {shot.url ? (
@@ -249,7 +291,7 @@ function DeviceGroupSection({
                 </div>
               )}
               <Space size={4} className="mt-2">
-                <Tooltip title="Заменить (удалить и загрузить новый)">
+                <Tooltip title="Replace (delete and upload a new one)">
                   <Button
                     type="text"
                     size="small"
@@ -262,11 +304,12 @@ function DeviceGroupSection({
                   />
                 </Tooltip>
                 <Popconfirm
-                  title="Удалить скриншот?"
+                  title="Delete screenshot?"
                   onConfirm={() =>
                     run(async () => {
                       await deleteScreenshot(shot.id);
-                      message.success("Удалено");
+                      setLocalShots((prev) => prev.filter((s) => s.id !== shot.id));
+                      message.success("Deleted");
                     })
                   }
                 >
@@ -329,7 +372,7 @@ function ScreenshotLocalePane({
     setCreating(true);
     try {
       await createScreenshotSet(localizationId, newDisplayType);
-      message.success(`Набор «${displayTypeLabel(newDisplayType)}» создан`);
+      message.success(`Set "${displayTypeLabel(newDisplayType)}" created`);
       onChanged();
     } catch (e) {
       const text =
@@ -337,7 +380,7 @@ function ScreenshotLocalePane({
           ? e.message
           : e instanceof Error
             ? e.message
-            : "Ошибка";
+            : "Error";
       message.error(text);
     } finally {
       setCreating(false);
@@ -347,7 +390,7 @@ function ScreenshotLocalePane({
   if (groups.length === 0) {
     return (
       <div className="py-8">
-        <Empty description="Нет наборов скриншотов для этой локали">
+        <Empty description="No screenshot sets for this locale">
           <Space orientation="vertical" className="mt-4">
             <Select
               style={{ minWidth: 280 }}
@@ -364,7 +407,7 @@ function ScreenshotLocalePane({
               loading={creating}
               onClick={() => void createSet()}
             >
-              Создать набор
+              Create set
             </Button>
           </Space>
         </Empty>
@@ -380,7 +423,7 @@ function ScreenshotLocalePane({
 
       {availableTypes.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
-          <Text type="secondary">Добавить размер устройства:</Text>
+          <Text type="secondary">Add device size:</Text>
           <Select
             size="small"
             style={{ minWidth: 220 }}
@@ -388,7 +431,7 @@ function ScreenshotLocalePane({
             onChange={setNewDisplayType}
             options={availableTypes.map((t) => ({
               value: t,
-              label: `${DISPLAY_TYPE_LABELS[t] ?? t}${t === PRIMARY_DISPLAY_TYPE ? " — Primary" : ""}${REQUIRED_DISPLAY_TYPES.has(t) ? " — Обязательный" : ""}`,
+              label: `${DISPLAY_TYPE_LABELS[t] ?? t}${t === PRIMARY_DISPLAY_TYPE ? " — Primary" : ""}${REQUIRED_DISPLAY_TYPES.has(t) ? " — Required" : ""}`,
             }))}
           />
           <Button
@@ -397,7 +440,7 @@ function ScreenshotLocalePane({
             loading={creating}
             onClick={() => void createSet()}
           >
-            Создать набор
+            Create set
           </Button>
         </div>
       )}
@@ -478,6 +521,11 @@ export function ScreenshotsPanel({ versionLocalizations, primaryLocale }: Props)
     }
   }, [localizationKey, sortedLocales, activeLocaleId]);
 
+  const hasAnyLoadedData = useMemo(
+    () => Object.keys(shotsByLocale).length > 0,
+    [shotsByLocale],
+  );
+
   const tabItems = useMemo(
     () =>
       sortedLocales.map((loc) => {
@@ -500,9 +548,9 @@ export function ScreenshotsPanel({ versionLocalizations, primaryLocale }: Props)
               )}
             </Space>
           ),
-          children: loading ? (
+          children: loading && !hasAnyLoadedData ? (
             <div className="flex justify-center py-16">
-              <Spin size="large" description="Загрузка скриншотов…" />
+              <Spin size="large" description="Loading screenshots..." />
             </div>
           ) : (
             <ScreenshotLocalePane
@@ -513,12 +561,12 @@ export function ScreenshotsPanel({ versionLocalizations, primaryLocale }: Props)
           ),
         };
       }),
-    [sortedLocales, shotsByLocale, loading, loadAll],
+    [sortedLocales, shotsByLocale, loading, loadAll, hasAnyLoadedData, primaryLocale],
   );
 
   if (!sortedLocales.length) {
     return (
-      <Text type="secondary">Нет локалей для выбранной версии приложения.</Text>
+      <Text type="secondary">No locales for the selected app version.</Text>
     );
   }
 
@@ -533,7 +581,7 @@ export function ScreenshotsPanel({ versionLocalizations, primaryLocale }: Props)
           className="mb-4"
           type="error"
           showIcon
-          title="Ошибки API"
+          title="API Errors"
           description={loadErrors.slice(0, 3).join(" · ")}
         />
       )}
@@ -546,7 +594,7 @@ export function ScreenshotsPanel({ versionLocalizations, primaryLocale }: Props)
         tabBarGutter={8}
         tabBarExtraContent={
           <Button icon={<ReloadOutlined />} onClick={loadAll} loading={loading}>
-            Обновить
+            Refresh
           </Button>
         }
         className="locale-tabs-editor min-h-0 [&_.ant-tabs-nav]:mb-0 [&_.ant-tabs-nav-wrap]:overflow-auto"

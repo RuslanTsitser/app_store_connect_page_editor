@@ -101,7 +101,7 @@ function LocalePane<T extends LocaleRow>({
               label={
                 <Space>
                   <span>{field.label}</span>
-                  {fieldDirty && <Tag color="gold">изменено</Tag>}
+                  {fieldDirty && <Tag color="gold">modified</Tag>}
                 </Space>
               }
             >
@@ -142,7 +142,7 @@ function LocalePane<T extends LocaleRow>({
               )}
               <div className="mt-1">
                 <Space size="small">
-                  <Tooltip title="Сравнить с исходным">
+                  <Tooltip title="Compare with original">
                     <Button
                       size="small"
                       icon={<DiffOutlined />}
@@ -166,16 +166,16 @@ function LocalePane<T extends LocaleRow>({
                         loading={savingId === row.id}
                         onClick={async () => {
                           const ok = await onSaveRow(row);
-                          if (ok) message.success(`Сохранено: ${row.locale}`);
+                          if (ok) message.success(`Saved: ${row.locale}`);
                         }}
                       >
-                        Сохранить
+                        Save
                       </Button>
                       <Button
                         size="small"
                         onClick={() => onDraftChange(row.id, field.key, original)}
                       >
-                        Сбросить
+                        Reset
                       </Button>
                     </>
                   )}
@@ -246,7 +246,7 @@ export function LocaleTabsEditor<T extends LocaleRow>({
               {dirty && (
                 <span
                   className="inline-block w-2 h-2 rounded-full bg-amber-500"
-                  title="Есть изменения"
+                  title="Has changes"
                 />
               )}
             </Space>
@@ -280,7 +280,7 @@ export function LocaleTabsEditor<T extends LocaleRow>({
 
   if (!sortedLocales.length) {
     return (
-      <Text type="secondary">Нет локалей для выбранной версии приложения.</Text>
+      <Text type="secondary">No locales for the selected app version.</Text>
     );
   }
 

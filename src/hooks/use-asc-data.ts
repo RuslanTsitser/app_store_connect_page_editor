@@ -21,7 +21,7 @@ export function useAscData() {
     try {
       return await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Неизвестная ошибка");
+      setError(e instanceof Error ? e.message : "Unknown error");
       return null;
     } finally {
       setLoading(false);
