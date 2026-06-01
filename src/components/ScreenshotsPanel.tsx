@@ -13,8 +13,7 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { DiffOutlined, ReloadOutlined } from "@ant-design/icons";
-import { ImageDiffModal } from "./ImageDiffModal";
+import { ReloadOutlined } from "@ant-design/icons";
 import {
   DISPLAY_TYPE_LABELS,
   DISPLAY_TYPE_PRIORITY,
@@ -39,23 +38,9 @@ const STATIC_DISPLAY_OPTIONS = [
 ];
 
 function ScreenshotGallery({
-  locale,
   shots,
-  baselineLocale,
-  baselineShots,
-  onDiff,
 }: {
-  locale: string;
   shots: ScreenshotItem[];
-  baselineLocale: string | null;
-  baselineShots: ScreenshotItem[];
-  onDiff: (payload: {
-    title: string;
-    leftLabel: string;
-    rightLabel: string;
-    leftUrl?: string | null;
-    rightUrl?: string | null;
-  }) => void;
 }) {
   if (shots.length === 0) {
     return (
@@ -68,46 +53,25 @@ function ScreenshotGallery({
   return (
     <div className="w-full flex justify-center">
       <div className="flex flex-wrap gap-4 justify-center max-w-5xl py-2">
-        {shots.map((shot, index) => {
-          const base = baselineShots[index];
-          return (
-            <div key={shot.id} className="flex flex-col items-center w-[120px]">
-              {shot.url ? (
-                <Image
-                  src={shot.url}
-                  width={110}
-                  alt={shot.fileName}
-                  className="rounded"
-                />
-              ) : (
-                <div className="w-[110px] h-[200px] bg-gray-100 rounded flex flex-col items-center justify-center text-xs text-center p-1 gap-1">
-                  <span>{shot.fileName}</span>
-                  {shot.deliveryState && (
-                    <Tag className="m-0 text-[10px]">{shot.deliveryState}</Tag>
-                  )}
-                </div>
-              )}
-              <Button
-                size="small"
-                className="mt-2 w-full"
-                icon={<DiffOutlined />}
-                onClick={() =>
-                  onDiff({
-                    title: `${locale} — ${index + 1}`,
-                    leftLabel: baselineLocale
-                      ? `${baselineLocale}`
-                      : "База",
-                    rightLabel: locale,
-                    leftUrl: base?.url,
-                    rightUrl: shot.url,
-                  })
-                }
-              >
-                Diff
-              </Button>
-            </div>
-          );
-        })}
+        {shots.map((shot) => (
+          <div key={shot.id} className="flex flex-col items-center w-[120px]">
+            {shot.url ? (
+              <Image
+                src={shot.url}
+                width={110}
+                alt={shot.fileName}
+                className="rounded"
+              />
+            ) : (
+              <div className="w-[110px] h-[200px] bg-gray-100 rounded flex flex-col items-center justify-center text-xs text-center p-1 gap-1">
+                <span>{shot.fileName}</span>
+                {shot.deliveryState && (
+                  <Tag className="m-0 text-[10px]">{shot.deliveryState}</Tag>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -116,7 +80,6 @@ function ScreenshotGallery({
 export function ScreenshotsPanel({ versionLocalizations }: Props) {
   const [displayType, setDisplayType] = useState(DEFAULT_DISPLAY_TYPE);
   const [discoveredTypes, setDiscoveredTypes] = useState<string[]>([]);
-  const [baselineLocale, setBaselineLocale] = useState<string | null>(null);
   const [shotsByLocale, setShotsByLocale] = useState<
     Record<string, ScreenshotItem[]>
   >({});
@@ -125,13 +88,6 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
   const [loadErrors, setLoadErrors] = useState<string[]>([]);
   const [activeLocaleId, setActiveLocaleId] = useState<string | undefined>();
   const loadSeq = useRef(0);
-  const [diff, setDiff] = useState<{
-    title: string;
-    leftUrl?: string | null;
-    rightUrl?: string | null;
-    leftLabel: string;
-    rightLabel: string;
-  } | null>(null);
 
   const sortedLocales = useMemo(
     () =>
@@ -211,22 +167,14 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
 
   useEffect(() => {
     if (!sortedLocales.length) {
-      setBaselineLocale(null);
       setActiveLocaleId(undefined);
       return;
-    }
-    if (!baselineLocale || !sortedLocales.some((l) => l.locale === baselineLocale)) {
-      setBaselineLocale(sortedLocales[0].locale);
     }
     const stillExists = sortedLocales.some((l) => l.id === activeLocaleId);
     if (!stillExists) {
       setActiveLocaleId(sortedLocales[0].id);
     }
-  }, [localizationKey, sortedLocales, baselineLocale, activeLocaleId]);
-
-  const baselineShots = baselineLocale
-    ? (shotsByLocale[baselineLocale] ?? [])
-    : [];
+  }, [localizationKey, sortedLocales, activeLocaleId]);
 
   const tabItems = useMemo(
     () =>
@@ -244,18 +192,10 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
               )}
             </Space>
           ),
-          children: (
-            <ScreenshotGallery
-              locale={loc.locale}
-              shots={shots}
-              baselineLocale={baselineLocale}
-              baselineShots={baselineShots}
-              onDiff={setDiff}
-            />
-          ),
+          children: <ScreenshotGallery shots={shots} />,
         };
       }),
-    [sortedLocales, shotsByLocale, baselineLocale, baselineShots],
+    [sortedLocales, shotsByLocale],
   );
 
   if (!sortedLocales.length) {
@@ -270,7 +210,7 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
         className="mb-4"
         type="info"
         showIcon
-        title="Скриншоты по локалям. Выберите тип устройства; для diff — базовую локаль."
+        title="Скриншоты по локалям. Выберите тип устройства, если превью пустые."
       />
 
       {hint && !loading && (
@@ -299,20 +239,6 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
             style={{ minWidth: 240 }}
           />
         </div>
-        <div>
-          <Text type="secondary" className="block text-xs mb-1">
-            База для diff
-          </Text>
-          <Select
-            value={baselineLocale ?? undefined}
-            onChange={setBaselineLocale}
-            options={sortedLocales.map((l) => ({
-              value: l.locale,
-              label: l.locale,
-            }))}
-            style={{ width: 160 }}
-          />
-        </div>
         <Button icon={<ReloadOutlined />} onClick={loadAll} loading={loading}>
           Обновить
         </Button>
@@ -333,16 +259,6 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
           destroyOnHidden={false}
         />
       )}
-
-      <ImageDiffModal
-        open={!!diff}
-        title={diff?.title ?? ""}
-        leftLabel={diff?.leftLabel ?? ""}
-        rightLabel={diff?.rightLabel ?? ""}
-        leftUrl={diff?.leftUrl}
-        rightUrl={diff?.rightUrl}
-        onClose={() => setDiff(null)}
-      />
     </div>
   );
 }
