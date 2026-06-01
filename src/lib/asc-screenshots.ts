@@ -33,7 +33,7 @@ const SETS_PATH_FIELDS =
   "&fields[appScreenshotSets]=screenshotDisplayType" +
   "&fields[appScreenshots]=fileName,imageAsset,assetDeliveryState";
 
-/** Порядок в UI и значение по умолчанию при создании набора (только типы из enum ASC API). */
+/** UI order and default when creating a set (ASC API enum values only). */
 export const DISPLAY_TYPE_PRIORITY = [
   "APP_IPHONE_67",
   "APP_IPHONE_65",
@@ -240,7 +240,7 @@ export async function fetchScreenshotsForLocalizationAllDevices(
         ? e.message
         : e instanceof Error
           ? e.message
-          : "Ошибка загрузки скриншотов";
+          : "Failed to load screenshots";
     return { groups: [], hasSets: false, error: message };
   }
 }
@@ -300,7 +300,7 @@ export async function fetchScreenshotsForLocalization(
         ? e.message
         : e instanceof Error
           ? e.message
-          : "Ошибка загрузки скриншотов";
+          : "Failed to load screenshots";
     return {
       shots: [],
       availableDisplayTypes: [],
@@ -351,10 +351,10 @@ export async function fetchScreenshotsForAllLocales(
   let hint: string | undefined;
   if (!anySets) {
     hint =
-      "У этой версии в App Store Connect нет наборов скриншотов. Загрузите их в ASC для выбранной версии (Prepare for Submission).";
+      "This version has no screenshot sets in App Store Connect. Add them in ASC for the selected version (Prepare for Submission).";
   } else if (!anyShots) {
     hint =
-      "Наборы есть, но превью пустые или загрузка в ASC ещё не завершена (нет imageAsset).";
+      "Sets exist but previews are empty or ASC processing is not finished yet (no imageAsset).";
   }
 
   return {

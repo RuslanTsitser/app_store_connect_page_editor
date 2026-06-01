@@ -44,8 +44,8 @@ export function TextDiffModal({
         newValue={newValue}
         splitView
         useDarkTheme={false}
-        leftTitle="Было"
-        rightTitle="Стало"
+        leftTitle="Before"
+        rightTitle="After"
         styles={{
           variables: {
             light: {

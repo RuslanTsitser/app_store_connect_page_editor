@@ -20,7 +20,7 @@ export async function ascApi<T = unknown>(
 ): Promise<T> {
   const credentials = loadCredentials();
   if (!credentials) {
-    throw new AscApiError("Сначала укажите API ключ App Store Connect", 401);
+    throw new AscApiError("Add your App Store Connect API key first", 401);
   }
 
   const normalized = path.startsWith("/") ? path : `/${path}`;

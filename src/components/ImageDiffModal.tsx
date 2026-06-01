@@ -36,11 +36,11 @@ export function ImageDiffModal({
     >
       {changed ? (
         <Tag color="orange" className="mb-4">
-          Изображения различаются
+          Images differ
         </Tag>
       ) : (
         <Tag color="green" className="mb-4">
-          Без изменений
+          No changes
         </Tag>
       )}
       <Row gutter={[16, 16]}>
@@ -51,7 +51,7 @@ export function ImageDiffModal({
           {leftUrl ? (
             <Image src={leftUrl} alt={leftLabel} className="rounded border" />
           ) : (
-            <Empty description="Нет изображения" />
+            <Empty description="No image" />
           )}
         </Col>
         <Col xs={24} md={12}>
@@ -61,7 +61,7 @@ export function ImageDiffModal({
           {rightUrl ? (
             <Image src={rightUrl} alt={rightLabel} className="rounded border" />
           ) : (
-            <Empty description="Нет изображения" />
+            <Empty description="No image" />
           )}
         </Col>
       </Row>

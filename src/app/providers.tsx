@@ -2,13 +2,13 @@
 
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { App, ConfigProvider } from "antd";
-import ruRU from "antd/locale/ru_RU";
+import enUS from "antd/locale/en_US";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AntdRegistry>
       <ConfigProvider
-        locale={ruRU}
+        locale={enUS}
         theme={{
           token: {
             colorPrimary: "#1677ff",

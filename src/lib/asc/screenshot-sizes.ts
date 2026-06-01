@@ -1,4 +1,4 @@
-/** Допустимые размеры (портрет или ландшафт) по типу слота ASC. */
+/** Allowed sizes (portrait or landscape) per ASC slot type. */
 export const SCREENSHOT_SIZE_SPECS: Record<
   string,
   { width: number; height: number; label: string }[]
@@ -39,8 +39,8 @@ export const SCREENSHOT_SIZE_SPECS: Record<
 
 export function sizeHintForDisplayType(displayType: string): string {
   const specs = SCREENSHOT_SIZE_SPECS[displayType];
-  if (!specs?.length) return "PNG или JPEG, точные размеры по спецификации Apple";
-  return specs.map((s) => s.label).join(" или ");
+  if (!specs?.length) return "PNG or JPEG, exact sizes per Apple specifications";
+  return specs.map((s) => s.label).join(" or ");
 }
 
 export function matchesScreenshotSize(
@@ -76,7 +76,7 @@ export async function readImageDimensions(
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("Не удалось прочитать изображение"));
+      reject(new Error("Failed to read image"));
     };
     img.src = url;
   });

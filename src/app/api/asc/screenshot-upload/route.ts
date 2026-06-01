@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   const credentials = parseCredentialsFromRequest(request);
   if (!credentials) {
     return NextResponse.json(
-      { error: "Укажите API ключ App Store Connect" },
+      { error: "Add your App Store Connect API key" },
       { status: 401 },
     );
   }
@@ -19,17 +19,17 @@ export async function POST(request: NextRequest) {
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "Неверный формат запроса" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request format" }, { status: 400 });
   }
 
   const setId = form.get("setId")?.toString().trim();
   const file = form.get("file");
 
   if (!setId) {
-    return NextResponse.json({ error: "Не указан setId" }, { status: 400 });
+    return NextResponse.json({ error: "setId is required" }, { status: 400 });
   }
   if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: "Не выбран файл" }, { status: 400 });
+    return NextResponse.json({ error: "No file selected" }, { status: 400 });
   }
 
   const fileName = file.name || "screenshot.png";
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json({ id: result.id });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Ошибка загрузки";
+    const message = e instanceof Error ? e.message : "Upload failed";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

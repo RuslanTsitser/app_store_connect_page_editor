@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ASC Page Editor",
   description:
-    "Редактор метаданных App Store Connect с одновременным редактированием локалей",
+    "App Store Connect metadata editor with multi-locale editing",
 };
 
 export default function RootLayout({

@@ -55,7 +55,7 @@ export async function createScreenshotSet(
   });
 
   const id = res.data?.id;
-  if (!id) throw new AscApiError("Не удалось создать набор скриншотов", 500);
+  if (!id) throw new AscApiError("Failed to create screenshot set", 500);
 
   return {
     id,
@@ -71,13 +71,13 @@ export async function validateScreenshotFile(
   displayType: string,
 ): Promise<void> {
   if (!file.type.match(/^image\/(png|jpeg|jpg)$/i) && !file.name.match(/\.(png|jpe?g)$/i)) {
-    throw new Error("Допустимы только PNG и JPEG");
+    throw new Error("Only PNG and JPEG are allowed");
   }
 
   const { width, height } = await readImageDimensions(file);
   if (!matchesScreenshotSize(width, height, displayType)) {
     throw new Error(
-      `Размер ${width}×${height} не подходит для этого слота. Ожидается: ${sizeHintForDisplayType(displayType)}`,
+      `Size ${width}×${height} is not valid for this slot. Expected: ${sizeHintForDisplayType(displayType)}`,
     );
   }
 }
@@ -89,14 +89,14 @@ export async function uploadScreenshotFile(
   currentCount: number,
 ): Promise<UploadScreenshotResult> {
   if (currentCount >= MAX_SCREENSHOTS_PER_SET) {
-    throw new Error(`Не больше ${MAX_SCREENSHOTS_PER_SET} скриншотов в одном наборе`);
+    throw new Error(`At most ${MAX_SCREENSHOTS_PER_SET} screenshots per set`);
   }
 
   await validateScreenshotFile(file, displayType);
 
   const credentials = loadCredentials();
   if (!credentials) {
-    throw new AscApiError("Сначала укажите API ключ App Store Connect", 401);
+    throw new AscApiError("Add your App Store Connect API key first", 401);
   }
 
   const form = new FormData();
@@ -130,7 +130,7 @@ export async function uploadScreenshotFile(
 
   const ok = data as { id?: string };
   if (!ok.id) {
-    throw new AscApiError("Загрузка завершилась без id", 500, data);
+    throw new AscApiError("Upload finished without an id", 500, data);
   }
 
   return { id: ok.id };

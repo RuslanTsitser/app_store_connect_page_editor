@@ -16,7 +16,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
           {
             title: "Unauthorized",
             detail:
-              "Укажите Issuer ID, Key ID и приватный ключ (.p8) в настройках API",
+              "Provide Issuer ID, Key ID, and private key (.p8) in API settings",
           },
         ],
       },

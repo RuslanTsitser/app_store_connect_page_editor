@@ -43,15 +43,15 @@ export function CredentialsModal({ open, onClose, onSaved }: Props) {
 
   return (
     <Modal
-      title="API ключ App Store Connect"
+      title="App Store Connect API Key"
       open={open}
       onCancel={onClose}
       onOk={handleSave}
       afterOpenChange={(visible) => {
         if (visible) hydrateForm();
       }}
-      okText="Сохранить"
-      cancelText="Отмена"
+      okText="Save"
+      cancelText="Cancel"
       width={640}
       destroyOnHidden
     >
@@ -59,27 +59,27 @@ export function CredentialsModal({ open, onClose, onSaved }: Props) {
         type="info"
         showIcon
         className="mb-4"
-        title="Данные хранятся только в localStorage этого браузера и отправляются на локальный API-прокси для подписи JWT."
+        title="Credentials are stored only in this browser's localStorage and sent to your API proxy for JWT signing."
       />
       <Form form={form} layout="vertical">
         <Form.Item
           name="issuerId"
           label="Issuer ID"
-          rules={[{ required: true, message: "Укажите Issuer ID" }]}
+          rules={[{ required: true, message: "Enter Issuer ID" }]}
         >
           <Input placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
         </Form.Item>
         <Form.Item
           name="keyId"
           label="Key ID"
-          rules={[{ required: true, message: "Укажите Key ID" }]}
+          rules={[{ required: true, message: "Enter Key ID" }]}
         >
           <Input placeholder="XXXXXXXXXX" />
         </Form.Item>
         <Form.Item
           name="privateKey"
-          label="Приватный ключ (.p8)"
-          rules={[{ required: true, message: "Вставьте содержимое .p8" }]}
+          label="Private key (.p8)"
+          rules={[{ required: true, message: "Paste .p8 contents" }]}
           extra={
             <Text type="secondary">
               Users and Access → Integrations → App Store Connect API → Generate
@@ -95,7 +95,7 @@ export function CredentialsModal({ open, onClose, onSaved }: Props) {
         </Form.Item>
       </Form>
       <Link type="danger" onClick={handleClear}>
-        Удалить сохранённые ключи
+        Remove saved keys
       </Link>
     </Modal>
   );

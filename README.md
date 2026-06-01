@@ -1,70 +1,71 @@
 # ASC Page Editor
 
-Веб-редактор метаданных App Store Connect с **одновременным редактированием всех локалей** в одной таблице, просмотром текущих значений и diff для текста и скриншотов.
+Web editor for App Store Connect metadata with **all locales editable at once**, current values visible, and diff for text and screenshots.
 
-## Возможности
+## Features
 
-- Ant Design UI на русском
-- Ввод API ключа (Issuer ID, Key ID, приватный ключ `.p8`) — хранится в `localStorage`
-- Выбор приложения и версии
-- Просмотр и редактирование:
-  - **App Store Version** — описание, ключевые слова, What's New, promotional text, URLs
-  - **App Info** — название, подзаголовок, privacy policy
-- Diff текста (side-by-side) перед сохранением
-- Просмотр и управление скриншотами по локалям: загрузка, удаление, замена, порядок (drag-and-drop)
+- Ant Design UI (English)
+- App Store Connect API key (Issuer ID, Key ID, `.p8` private key) — stored in `localStorage`
+- App and version picker
+- View and edit:
+  - **App Store Version** — description, keywords, What's New, promotional text, URLs
+  - **App Info** — name, subtitle, privacy policy
+- Side-by-side text diff before save
+- Screenshots per locale: upload, delete, replace, reorder (drag-and-drop)
 
-## Запуск
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
-Для доступа с другого устройства в сети используйте Network URL из терминала (`npm run dev`). Если HMR не подключается, добавьте IP хоста в `allowedDevOrigins` в `next.config.ts`.
+For access from another device on your LAN, use the Network URL from the terminal. If HMR fails, add the host IP via `ALLOWED_DEV_ORIGINS` in `.env.local` (comma-separated) — see `next.config.ts`.
 
-## API ключ
+## API key
 
 1. [App Store Connect](https://appstoreconnect.apple.com) → Users and Access → Integrations → **App Store Connect API**
-2. Создайте ключ с ролью Admin или App Manager
-3. Скачайте `.p8` и скопируйте **Issuer ID**, **Key ID** и содержимое ключа в настройки приложения
+2. Create a key with **Admin** or **App Manager** role
+3. Download `.p8` and paste **Issuer ID**, **Key ID**, and key contents into the app
 
-Запросы идут через локальный прокси `/api/asc/*`, который подписывает JWT (ES256) и обращается к `https://api.appstoreconnect.apple.com/v1`.
+Requests go through `/api/asc/*`, which signs a JWT (ES256) and calls `https://api.appstoreconnect.apple.com/v1`.
 
-## Безопасность
+## Security
 
-Ключ хранится только в браузере и передаётся на ваш локальный сервер Next.js в заголовках. Не используйте на публичном хостинге без дополнительной защиты.
+Credentials stay in the browser and are sent to your Next.js server in headers for signing. Do not expose a public deployment without extra protection (e.g. Vercel Deployment Protection).
 
-## Скриншоты
+## Screenshots
 
-На вкладке **Скриншоты** для каждой локали и размера устройства:
+On the **Screenshots** tab, per locale and device size:
 
-- **Добавить** — PNG/JPEG с размерами по [спецификации Apple](https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications)
-- **Заменить** — удаление текущего кадра и загрузка нового
-- **Удалить** — `DELETE` в App Store Connect API
-- **Порядок** — перетаскивание превью (сохраняется через API)
-- **Создать набор** — если для локали ещё нет слота нужного размера
+- **Add** — PNG/JPEG per [Apple specifications](https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications)
+- **Replace** — delete current frame and upload a new one
+- **Delete** — App Store Connect API `DELETE`
+- **Order** — drag previews (saved via API)
+- **Create set** — when a locale has no slot for that device size yet
 
-Загрузка файла идёт через локальный маршрут `/api/asc/screenshot-upload` (резерв → S3 → commit).
+Uploads use `/api/asc/screenshot-upload` (reserve → S3 → commit).
 
-## Ограничения
+## Limits
 
-- До 10 скриншотов в одном наборе (лимит ASC)
-- Редактирование возможно только когда версия в подходящем состоянии (например `PREPARE_FOR_SUBMISSION`)
+- Up to 10 screenshots per set (ASC limit)
+- Editing only when the version is in a suitable state (e.g. `PREPARE_FOR_SUBMISSION`)
+- `APP_IPHONE_69` may not be accepted by the API; use `APP_IPHONE_67` (6.7") when creating sets
 
-## Деплой на Vercel
+## Deploy on Vercel
 
-Проект — стандартное Next.js-приложение, отдельных серверных секретов для ASC **не нужно**: ключ по-прежнему вводится в браузере.
+Standard Next.js app — **no server-side ASC secrets**; the key is still entered in the browser.
 
-### Быстрый старт
+### Quick start
 
-1. Залейте репозиторий на GitHub/GitLab/Bitbucket.
-2. [Импортируйте проект в Vercel](https://vercel.com/new) (Framework Preset: **Next.js**).
-3. Build Command: `npm run build`, Output: авто.
+1. Push the repo to GitHub/GitLab/Bitbucket.
+2. [Import on Vercel](https://vercel.com/new) (Framework: **Next.js**).
+3. Build: `npm run build`, output: automatic.
 4. Deploy.
 
-Или из корня репозитория (нужен [Vercel CLI](https://vercel.com/docs/cli)):
+Or with [Vercel CLI](https://vercel.com/docs/cli):
 
 ```bash
 npm i -g vercel
@@ -72,30 +73,30 @@ vercel          # preview
 vercel --prod   # production
 ```
 
-### Переменные окружения
+### Environment variables
 
-На Vercel **не обязательны** для работы редактора. Опционально для локальной разработки:
+Not required on Vercel. Optional for local dev:
 
-| Переменная | Где | Назначение |
-|------------|-----|------------|
-| `ALLOWED_DEV_ORIGINS` | Local `.env.local` | Доп. хосты для HMR (`next.config.ts`), через запятую |
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `ALLOWED_DEV_ORIGINS` | `.env.local` | Extra HMR hosts in `next.config.ts`, comma-separated |
 
-### API routes на Vercel
+### API routes on Vercel
 
-- `/api/asc/*` — прокси к App Store Connect (JWT на сервере)
-- `/api/asc/screenshot-upload` — загрузка скриншотов (до **60 с**, `vercel.json` + `maxDuration`)
+- `/api/asc/*` — proxy to App Store Connect (JWT on server)
+- `/api/asc/screenshot-upload` — screenshot upload (up to **60s**, `vercel.json` + `maxDuration`)
 
-На Hobby лимит тела запроса ~**4.5 MB**; крупные PNG могут не пройти — уменьшите файл или используйте план Pro.
+On Hobby, request body limit is ~**4.5 MB**; large PNGs may fail — compress or use Pro.
 
-### Безопасность в production
+### Production security
 
-Публичный URL = любой может открыть UI и отправить **свой** API-ключ через прокси. Рекомендуется:
+A public URL lets anyone open the UI and send **their own** API key through your proxy. Recommended:
 
-- включить **[Vercel Deployment Protection](https://vercel.com/docs/security/deployment-protection)** (Password / Vercel Auth) для Preview и Production;
-- не хранить `.p8` в переменных Vercel и не коммитить ключи;
-- выдавать API-ключ ASC с минимально нужной ролью (App Manager).
+- Enable **[Vercel Deployment Protection](https://vercel.com/docs/security/deployment-protection)** (password / Vercel Auth) for Preview and Production
+- Do not store `.p8` in Vercel env vars or commit keys
+- Use minimal ASC key role (App Manager)
 
-### Проверка перед деплоем
+### Pre-deploy check
 
 ```bash
 npm run build

@@ -43,7 +43,7 @@ async function uploadChunks(
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `Ошибка загрузки файла (${res.status})${text ? `: ${text.slice(0, 200)}` : ""}`,
+        `File upload failed (${res.status})${text ? `: ${text.slice(0, 200)}` : ""}`,
       );
     }
   }
@@ -83,10 +83,10 @@ export async function uploadScreenshotToSet(
   const operations = reserve.data?.attributes?.uploadOperations;
 
   if (!screenshotId) {
-    throw new Error("ASC не вернул id скриншота");
+    throw new Error("ASC did not return a screenshot id");
   }
   if (!operations?.length) {
-    throw new Error("ASC не вернул uploadOperations");
+    throw new Error("ASC did not return uploadOperations");
   }
 
   await uploadChunks(buffer, operations);
