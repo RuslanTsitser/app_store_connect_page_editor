@@ -73,10 +73,6 @@ function LocalePane<T extends LocaleRow>({
 
   return (
     <div className="overflow-y-auto max-h-[calc(100vh-320px)] pr-2">
-      {dirty && (
-        <div className="mb-4 py-2 border-b border-neutral-200 dark:border-neutral-800" />
-      )}
-
       <Form layout="vertical" className="max-w-3xl">
         {fields.map((field) => {
           const value = getValue(row, field.key);
