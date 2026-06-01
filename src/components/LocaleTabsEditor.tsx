@@ -111,6 +111,8 @@ function LocalePane<T extends LocaleRow>({
                     onDraftChange(row.id, field.key, e.target.value)
                   }
                   maxLength={maxLength}
+                  rows={3}
+                  classNames={{ textarea: "resize-y min-h-[72px]" }}
                   showCount={
                     maxLength
                       ? {
@@ -119,7 +121,6 @@ function LocalePane<T extends LocaleRow>({
                         }
                       : true
                   }
-                  autoSize={{ minRows: 4, maxRows: 16 }}
                 />
               ) : (
                 <Input
