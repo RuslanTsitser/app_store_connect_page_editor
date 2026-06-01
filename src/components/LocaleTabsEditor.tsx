@@ -12,10 +12,10 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { DiffOutlined, SaveOutlined } from "@ant-design/icons";
+import { DiffOutlined } from "@ant-design/icons";
 import { TextDiffModal } from "./TextDiffModal";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 type FieldDef = {
   key: string;
@@ -73,30 +73,9 @@ function LocalePane<T extends LocaleRow>({
 
   return (
     <div className="overflow-y-auto max-h-[calc(100vh-320px)] pr-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sticky top-0 z-10 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-inherit">
-        <div>
-          <Title level={5} className="!mb-0">
-            {row.locale}
-          </Title>
-          {dirty && (
-            <Text type="warning" className="text-xs">
-              Есть несохранённые изменения
-            </Text>
-          )}
-        </div>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          loading={savingId === row.id}
-          disabled={!dirty}
-          onClick={async () => {
-            const ok = await onSaveRow(row);
-            if (ok) message.success(`Сохранено: ${row.locale}`);
-          }}
-        >
-          Сохранить локаль
-        </Button>
-      </div>
+      {dirty && (
+        <div className="mb-4 py-2 border-b border-neutral-200 dark:border-neutral-800" />
+      )}
 
       <Form layout="vertical" className="max-w-3xl">
         {fields.map((field) => {
@@ -131,22 +110,45 @@ function LocalePane<T extends LocaleRow>({
                 />
               )}
               <div className="mt-1">
-                <Tooltip title="Сравнить с исходным">
-                  <Button
-                    size="small"
-                    icon={<DiffOutlined />}
-                    disabled={!fieldDirty}
-                    onClick={() =>
-                      onDiff(
-                        `${row.locale} — ${field.label}`,
-                        original,
-                        value,
-                      )
-                    }
-                  >
-                    Diff
-                  </Button>
-                </Tooltip>
+                <Space size="small">
+                  <Tooltip title="Сравнить с исходным">
+                    <Button
+                      size="small"
+                      icon={<DiffOutlined />}
+                      disabled={!fieldDirty}
+                      onClick={() =>
+                        onDiff(
+                          `${row.locale} — ${field.label}`,
+                          original,
+                          value,
+                        )
+                      }
+                    >
+                      Diff
+                    </Button>
+                  </Tooltip>
+                  {fieldDirty && (
+                    <>
+                      <Button
+                        size="small"
+                        type="primary"
+                        loading={savingId === row.id}
+                        onClick={async () => {
+                          const ok = await onSaveRow(row);
+                          if (ok) message.success(`Сохранено: ${row.locale}`);
+                        }}
+                      >
+                        Сохранить
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => onDraftChange(row.id, field.key, original)}
+                      >
+                        Сбросить
+                      </Button>
+                    </>
+                  )}
+                </Space>
               </div>
             </Form.Item>
           );
