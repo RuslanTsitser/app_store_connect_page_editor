@@ -72,8 +72,9 @@ function LocalePane<T extends LocaleRow>({
   const dirty = localeHasChanges(row, fields, getValue, getOriginal);
 
   return (
-    <div className="overflow-y-auto max-h-[calc(100vh-320px)] pr-2">
-      <Form layout="vertical" className="max-w-3xl">
+    <div className="overflow-y-auto max-h-[calc(100vh-320px)] px-2">
+      <div className="w-full flex justify-center">
+        <Form layout="vertical" className="w-full max-w-3xl">
         {fields.map((field) => {
           const value = getValue(row, field.key);
           const original = getOriginal(row.id, field.key);
@@ -149,7 +150,8 @@ function LocalePane<T extends LocaleRow>({
             </Form.Item>
           );
         })}
-      </Form>
+        </Form>
+      </div>
     </div>
   );
 }
