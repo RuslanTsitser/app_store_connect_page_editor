@@ -52,3 +52,51 @@ npm run dev
 
 - До 10 скриншотов в одном наборе (лимит ASC)
 - Редактирование возможно только когда версия в подходящем состоянии (например `PREPARE_FOR_SUBMISSION`)
+
+## Деплой на Vercel
+
+Проект — стандартное Next.js-приложение, отдельных серверных секретов для ASC **не нужно**: ключ по-прежнему вводится в браузере.
+
+### Быстрый старт
+
+1. Залейте репозиторий на GitHub/GitLab/Bitbucket.
+2. [Импортируйте проект в Vercel](https://vercel.com/new) (Framework Preset: **Next.js**).
+3. Build Command: `npm run build`, Output: авто.
+4. Deploy.
+
+Или из корня репозитория (нужен [Vercel CLI](https://vercel.com/docs/cli)):
+
+```bash
+npm i -g vercel
+vercel          # preview
+vercel --prod   # production
+```
+
+### Переменные окружения
+
+На Vercel **не обязательны** для работы редактора. Опционально для локальной разработки:
+
+| Переменная | Где | Назначение |
+|------------|-----|------------|
+| `ALLOWED_DEV_ORIGINS` | Local `.env.local` | Доп. хосты для HMR (`next.config.ts`), через запятую |
+
+### API routes на Vercel
+
+- `/api/asc/*` — прокси к App Store Connect (JWT на сервере)
+- `/api/asc/screenshot-upload` — загрузка скриншотов (до **60 с**, `vercel.json` + `maxDuration`)
+
+На Hobby лимит тела запроса ~**4.5 MB**; крупные PNG могут не пройти — уменьшите файл или используйте план Pro.
+
+### Безопасность в production
+
+Публичный URL = любой может открыть UI и отправить **свой** API-ключ через прокси. Рекомендуется:
+
+- включить **[Vercel Deployment Protection](https://vercel.com/docs/security/deployment-protection)** (Password / Vercel Auth) для Preview и Production;
+- не хранить `.p8` в переменных Vercel и не коммитить ключи;
+- выдавать API-ключ ASC с минимально нужной ролью (App Manager).
+
+### Проверка перед деплоем
+
+```bash
+npm run build
+```

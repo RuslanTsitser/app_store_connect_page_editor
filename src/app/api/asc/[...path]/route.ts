@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseCredentialsFromRequest } from "@/lib/asc/credentials-from-request";
 import { ascServerFetch } from "@/lib/asc/server-client";
 
+export const maxDuration = 30;
+export const runtime = "nodejs";
+
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: NextRequest, context: RouteContext) {

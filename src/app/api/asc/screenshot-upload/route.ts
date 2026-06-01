@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseCredentialsFromRequest } from "@/lib/asc/credentials-from-request";
 import { uploadScreenshotToSet } from "@/lib/asc/screenshot-upload-server";
 
+/** Reserve → S3 → commit can take longer than the default 10s on Vercel. */
+export const maxDuration = 60;
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   const credentials = parseCredentialsFromRequest(request);
   if (!credentials) {
