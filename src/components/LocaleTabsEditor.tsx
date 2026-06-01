@@ -17,6 +17,19 @@ import { TextDiffModal } from "./TextDiffModal";
 
 const { Text } = Typography;
 
+const FIELD_LIMITS: Record<string, number> = {
+  description: 4000,
+  keywords: 100,
+  whatsNew: 4000,
+  promotionalText: 170,
+  marketingUrl: 255,
+  supportUrl: 255,
+  name: 30,
+  subtitle: 30,
+  privacyPolicyUrl: 255,
+  privacyPolicyText: 4000,
+};
+
 type FieldDef = {
   key: string;
   label: string;
@@ -79,6 +92,7 @@ function LocalePane<T extends LocaleRow>({
           const value = getValue(row, field.key);
           const original = getOriginal(row.id, field.key);
           const fieldDirty = value !== original;
+          const maxLength = FIELD_LIMITS[field.key];
 
           return (
             <Form.Item
@@ -96,6 +110,15 @@ function LocalePane<T extends LocaleRow>({
                   onChange={(e) =>
                     onDraftChange(row.id, field.key, e.target.value)
                   }
+                  maxLength={maxLength}
+                  showCount={
+                    maxLength
+                      ? {
+                          formatter: ({ count }) =>
+                            String(Math.max(maxLength - count, 0)),
+                        }
+                      : true
+                  }
                   autoSize={{ minRows: 4, maxRows: 16 }}
                 />
               ) : (
@@ -103,6 +126,15 @@ function LocalePane<T extends LocaleRow>({
                   value={value}
                   onChange={(e) =>
                     onDraftChange(row.id, field.key, e.target.value)
+                  }
+                  maxLength={maxLength}
+                  showCount={
+                    maxLength
+                      ? {
+                          formatter: ({ count }) =>
+                            String(Math.max(maxLength - count, 0)),
+                        }
+                      : true
                   }
                 />
               )}
