@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASC Page Editor
 
-## Getting Started
+Веб-редактор метаданных App Store Connect с **одновременным редактированием всех локалей** в одной таблице, просмотром текущих значений и diff для текста и скриншотов.
 
-First, run the development server:
+## Возможности
+
+- Ant Design UI на русском
+- Ввод API ключа (Issuer ID, Key ID, приватный ключ `.p8`) — хранится в `localStorage`
+- Выбор приложения и версии
+- Просмотр и редактирование:
+  - **App Store Version** — описание, ключевые слова, What's New, promotional text, URLs
+  - **App Info** — название, подзаголовок, privacy policy
+- Diff текста (side-by-side) перед сохранением
+- Просмотр скриншотов по локалям и image diff с базовой локалью
+
+## Запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Для доступа с другого устройства в сети используйте Network URL из терминала (`npm run dev`). Если HMR не подключается, добавьте IP хоста в `allowedDevOrigins` в `next.config.ts`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API ключ
 
-## Learn More
+1. [App Store Connect](https://appstoreconnect.apple.com) → Users and Access → Integrations → **App Store Connect API**
+2. Создайте ключ с ролью Admin или App Manager
+3. Скачайте `.p8` и скопируйте **Issuer ID**, **Key ID** и содержимое ключа в настройки приложения
 
-To learn more about Next.js, take a look at the following resources:
+Запросы идут через локальный прокси `/api/asc/*`, который подписывает JWT (ES256) и обращается к `https://api.appstoreconnect.apple.com/v1`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Безопасность
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ключ хранится только в браузере и передаётся на ваш локальный сервер Next.js в заголовках. Не используйте на публичном хостинге без дополнительной защиты.
 
-## Deploy on Vercel
+## Ограничения
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Загрузка новых скриншотов через API не реализована (только просмотр и сравнение)
+- Редактирование возможно только когда версия в подходящем состоянии (например `PREPARE_FOR_SUBMISSION`)
