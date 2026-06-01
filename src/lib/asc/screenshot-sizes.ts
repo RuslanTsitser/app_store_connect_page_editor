@@ -5,9 +5,12 @@ export const SCREENSHOT_SIZE_SPECS: Record<
 > = {
   APP_IPHONE_69: [
     { width: 1320, height: 2868, label: "1320×2868" },
-    { width: 1290, height: 2796, label: "1290×2796 (fallback)" },
+    { width: 1290, height: 2796, label: "1290×2796" },
   ],
-  APP_IPHONE_67: [{ width: 1290, height: 2796, label: "1290×2796" }],
+  APP_IPHONE_67: [
+    { width: 1290, height: 2796, label: "1290×2796" },
+    { width: 1320, height: 2868, label: "1320×2868 (6.9\" asset)" },
+  ],
   APP_IPHONE_65: [
     { width: 1284, height: 2778, label: "1284×2778" },
     { width: 1260, height: 2736, label: "1260×2736 (Air)" },

@@ -33,9 +33,8 @@ const SETS_PATH_FIELDS =
   "&fields[appScreenshotSets]=screenshotDisplayType" +
   "&fields[appScreenshots]=fileName,imageAsset,assetDeliveryState";
 
-/** Приоритет при авто-выборе размера (6.9\" — актуальный обязательный слот). */
+/** Порядок в UI и значение по умолчанию при создании набора (только типы из enum ASC API). */
 export const DISPLAY_TYPE_PRIORITY = [
-  "APP_IPHONE_69",
   "APP_IPHONE_67",
   "APP_IPHONE_65",
   "APP_IPHONE_61",

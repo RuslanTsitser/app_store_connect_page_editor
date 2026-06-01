@@ -44,11 +44,8 @@ import { AscApiError } from "@/lib/asc-client";
 
 const { Text } = Typography;
 
-const PRIMARY_DISPLAY_TYPE = DISPLAY_TYPE_PRIORITY[0];
-const REQUIRED_DISPLAY_TYPES = new Set<string>([
-  "APP_IPHONE_69",
-  "APP_IPAD_PRO_3GEN_129",
-]);
+/** First device size in the list (default for “Create set”), not an ASC “required” flag. */
+const DEFAULT_DISPLAY_TYPE = DISPLAY_TYPE_PRIORITY[0];
 
 function displayTypeOrderIndex(displayType: string): number {
   const idx = DISPLAY_TYPE_PRIORITY.indexOf(
@@ -61,9 +58,9 @@ function sortGroupsPrimaryFirst(
   groups: DeviceScreenshotGroup[],
 ): DeviceScreenshotGroup[] {
   return [...groups].sort((a, b) => {
-    if (a.displayType === PRIMARY_DISPLAY_TYPE && b.displayType !== PRIMARY_DISPLAY_TYPE)
+    if (a.displayType === DEFAULT_DISPLAY_TYPE && b.displayType !== DEFAULT_DISPLAY_TYPE)
       return -1;
-    if (b.displayType === PRIMARY_DISPLAY_TYPE && a.displayType !== PRIMARY_DISPLAY_TYPE)
+    if (b.displayType === DEFAULT_DISPLAY_TYPE && a.displayType !== DEFAULT_DISPLAY_TYPE)
       return 1;
     return (
       displayTypeOrderIndex(a.displayType) - displayTypeOrderIndex(b.displayType)
@@ -194,16 +191,6 @@ function DeviceGroupSection({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <Text strong>{displayTypeLabel(group.displayType)}</Text>
-          {group.displayType === PRIMARY_DISPLAY_TYPE && (
-            <Tag color="blue" className="ml-2">
-              Primary
-            </Tag>
-          )}
-          {REQUIRED_DISPLAY_TYPES.has(group.displayType) && (
-            <Tag color="red" className="ml-2">
-              Required
-            </Tag>
-          )}
           <Text type="secondary" className="ml-2 text-xs">
             {sizeHintForDisplayType(group.displayType)}
           </Text>
@@ -431,7 +418,7 @@ function ScreenshotLocalePane({
             onChange={setNewDisplayType}
             options={availableTypes.map((t) => ({
               value: t,
-              label: `${DISPLAY_TYPE_LABELS[t] ?? t}${t === PRIMARY_DISPLAY_TYPE ? " — Primary" : ""}${REQUIRED_DISPLAY_TYPES.has(t) ? " — Required" : ""}`,
+              label: DISPLAY_TYPE_LABELS[t] ?? t,
             }))}
           />
           <Button
