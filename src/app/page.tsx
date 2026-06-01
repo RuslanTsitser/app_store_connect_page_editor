@@ -336,6 +336,7 @@ export default function HomePage() {
                 children: (
                   <LocaleTabsEditor
                     locales={versionRows}
+                    primaryLocale={selectedApp?.attributes.primaryLocale ?? null}
                     fields={VERSION_TEXT_FIELDS}
                     getValue={(row, field) =>
                       versionDraft[row.id]?.[field] ?? ""
@@ -360,6 +361,7 @@ export default function HomePage() {
                 children: (
                   <LocaleTabsEditor
                     locales={appInfoRows}
+                    primaryLocale={selectedApp?.attributes.primaryLocale ?? null}
                     fields={APP_INFO_TEXT_FIELDS}
                     getValue={(row, field) =>
                       appInfoDraft[row.id]?.[field] ?? ""
@@ -382,7 +384,10 @@ export default function HomePage() {
                 key: "screenshots",
                 label: "Скриншоты",
                 children: (
-                  <ScreenshotsPanel versionLocalizations={versionRows} />
+                  <ScreenshotsPanel
+                    versionLocalizations={versionRows}
+                    primaryLocale={selectedApp?.attributes.primaryLocale ?? null}
+                  />
                 ),
               },
             ]}

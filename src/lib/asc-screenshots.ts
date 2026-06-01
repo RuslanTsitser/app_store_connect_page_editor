@@ -81,6 +81,7 @@ export function sortDisplayTypes(types: string[]): string[] {
 }
 
 export type DeviceScreenshotGroup = {
+  setId: string;
   displayType: string;
   shots: ScreenshotItem[];
 };
@@ -223,7 +224,7 @@ export async function fetchScreenshotsForLocalizationAllDevices(
       const displayType = String(set.attributes.screenshotDisplayType ?? "");
       if (!displayType) continue;
       const shots = await shotsForSetWithFallback(set, res.included ?? []);
-      byType.set(displayType, { displayType, shots });
+      byType.set(displayType, { setId: set.id, displayType, shots });
     }
 
     const groups = sortDisplayTypes([...byType.keys()]).map(

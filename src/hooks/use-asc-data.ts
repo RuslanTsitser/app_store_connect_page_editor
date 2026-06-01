@@ -32,7 +32,7 @@ export function useAscData() {
     () =>
       run(() =>
         ascApi<AscListResponse<"apps", AppAttributes>>(
-          "/apps?limit=200&fields[apps]=name,bundleId,sku",
+          "/apps?limit=200&fields[apps]=name,bundleId,sku,primaryLocale",
         ),
       ),
     [run],

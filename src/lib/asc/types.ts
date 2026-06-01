@@ -24,6 +24,7 @@ export interface AppAttributes {
   name: string;
   bundleId: string;
   sku: string;
+  primaryLocale?: string;
 }
 
 export interface AppStoreVersionAttributes {

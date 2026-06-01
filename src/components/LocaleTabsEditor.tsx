@@ -43,6 +43,7 @@ interface LocaleRow {
 
 interface Props<T extends LocaleRow> {
   locales: T[];
+  primaryLocale?: string | null;
   fields: readonly FieldDef[];
   getValue: (row: T, fieldKey: string) => string;
   getOriginal: (id: string, fieldKey: string) => string;
@@ -191,6 +192,7 @@ function LocalePane<T extends LocaleRow>({
 
 export function LocaleTabsEditor<T extends LocaleRow>({
   locales,
+  primaryLocale,
   fields,
   getValue,
   getOriginal,
@@ -204,10 +206,15 @@ export function LocaleTabsEditor<T extends LocaleRow>({
     newValue: string;
   } | null>(null);
 
-  const sortedLocales = useMemo(
-    () => [...locales].sort((a, b) => a.locale.localeCompare(b.locale)),
-    [locales],
-  );
+  const sortedLocales = useMemo(() => {
+    const list = [...locales].sort((a, b) => a.locale.localeCompare(b.locale));
+    if (!primaryLocale) return list;
+    return list.sort((a, b) => {
+      if (a.locale === primaryLocale && b.locale !== primaryLocale) return -1;
+      if (b.locale === primaryLocale && a.locale !== primaryLocale) return 1;
+      return a.locale.localeCompare(b.locale);
+    });
+  }, [locales, primaryLocale]);
 
   const [activeKey, setActiveKey] = useState<string | undefined>();
 
@@ -231,6 +238,11 @@ export function LocaleTabsEditor<T extends LocaleRow>({
           label: (
             <Space size={4}>
               <span>{row.locale}</span>
+              {primaryLocale && row.locale === primaryLocale && (
+                <Tag color="blue" className="m-0">
+                  Primary
+                </Tag>
+              )}
               {dirty && (
                 <span
                   className="inline-block w-2 h-2 rounded-full bg-amber-500"
