@@ -282,41 +282,31 @@ export default function HomePage() {
         )}
 
         <Card className="mb-4">
-          <Space wrap size="large" className="w-full">
-            <div>
-              <Text type="secondary" className="block text-xs mb-1">
-                Приложение
-              </Text>
-              <Select
-                showSearch
-                placeholder="Выберите приложение"
-                style={{ minWidth: 320 }}
-                value={appId ?? undefined}
-                onChange={setAppId}
-                optionFilterProp="label"
-                loading={ascLoading && !apps.length}
-                options={apps.map((a) => ({
-                  value: a.id,
-                  label: `${a.attributes.name} (${a.attributes.bundleId})`,
-                }))}
-              />
-            </div>
-            <div>
-              <Text type="secondary" className="block text-xs mb-1">
-                Версия
-              </Text>
-              <Select
-                placeholder="Версия"
-                style={{ minWidth: 280 }}
-                value={versionId ?? undefined}
-                onChange={setVersionId}
-                disabled={!appId}
-                options={versions.map((v) => ({
-                  value: v.id,
-                  label: `${v.attributes.versionString} — ${v.attributes.appStoreState}`,
-                }))}
-              />
-            </div>
+          <Space wrap size="large" className="w-full" align="center">
+            <Select
+              showSearch
+              placeholder="Выберите приложение"
+              style={{ minWidth: 320 }}
+              value={appId ?? undefined}
+              onChange={setAppId}
+              optionFilterProp="label"
+              loading={ascLoading && !apps.length}
+              options={apps.map((a) => ({
+                value: a.id,
+                label: `${a.attributes.name} (${a.attributes.bundleId})`,
+              }))}
+            />
+            <Select
+              placeholder="Версия"
+              style={{ minWidth: 280 }}
+              value={versionId ?? undefined}
+              onChange={setVersionId}
+              disabled={!appId}
+              options={versions.map((v) => ({
+                value: v.id,
+                label: `${v.attributes.versionString} — ${v.attributes.appStoreState}`,
+              }))}
+            />
             <Button
               icon={<ReloadOutlined />}
               onClick={() => {

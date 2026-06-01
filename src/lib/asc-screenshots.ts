@@ -68,6 +68,23 @@ export function displayTypeLabel(type: string): string {
   return DISPLAY_TYPE_LABELS[type] ?? type;
 }
 
+export function sortDisplayTypes(types: string[]): string[] {
+  return [...types].sort((a, b) => {
+    const ai = DISPLAY_TYPE_PRIORITY.indexOf(
+      a as (typeof DISPLAY_TYPE_PRIORITY)[number],
+    );
+    const bi = DISPLAY_TYPE_PRIORITY.indexOf(
+      b as (typeof DISPLAY_TYPE_PRIORITY)[number],
+    );
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+}
+
+export type DeviceScreenshotGroup = {
+  displayType: string;
+  shots: ScreenshotItem[];
+};
+
 function buildImageUrl(attrs: ScreenshotAttributes): string | null {
   const asset = attrs.imageAsset;
   const tpl = asset?.templateUrl;
@@ -170,6 +187,64 @@ export type LocalizationScreenshotResult = {
   error?: string;
 };
 
+async function shotsForSetWithFallback(
+  set: JsonApiResource,
+  included: JsonApiResource[],
+): Promise<ScreenshotItem[]> {
+  let shots = screenshotsForSet(set, included);
+  if (shots.length === 0) {
+    const nested = await ascApi<{ data?: JsonApiResource[] }>(
+      `/appScreenshotSets/${set.id}/appScreenshots?limit=20&fields[appScreenshots]=fileName,imageAsset,assetDeliveryState`,
+    );
+    shots = nested.data?.map(toScreenshotItem) ?? [];
+  }
+  return shots;
+}
+
+export async function fetchScreenshotsForLocalizationAllDevices(
+  localizationId: string,
+): Promise<{
+  groups: DeviceScreenshotGroup[];
+  hasSets: boolean;
+  error?: string;
+}> {
+  try {
+    const res = await ascApi<ScreenshotSetsResponse>(
+      `/appStoreVersionLocalizations/${localizationId}/appScreenshotSets?${SETS_PATH_FIELDS}`,
+    );
+
+    const sets = res.data ?? [];
+    if (sets.length === 0) {
+      return { groups: [], hasSets: false };
+    }
+
+    const byType = new Map<string, DeviceScreenshotGroup>();
+    for (const set of sets) {
+      const displayType = String(set.attributes.screenshotDisplayType ?? "");
+      if (!displayType) continue;
+      const shots = await shotsForSetWithFallback(set, res.included ?? []);
+      byType.set(displayType, { displayType, shots });
+    }
+
+    const groups = sortDisplayTypes([...byType.keys()]).map(
+      (type) => byType.get(type)!,
+    );
+
+    return {
+      groups,
+      hasSets: true,
+    };
+  } catch (e) {
+    const message =
+      e instanceof AscApiError
+        ? e.message
+        : e instanceof Error
+          ? e.message
+          : "Ошибка загрузки скриншотов";
+    return { groups: [], hasSets: false, error: message };
+  }
+}
+
 export async function fetchScreenshotsForLocalization(
   localizationId: string,
   displayType: string,
@@ -237,24 +312,19 @@ export async function fetchScreenshotsForLocalization(
 }
 
 export type FetchAllScreenshotsResult = {
-  byLocale: Record<string, ScreenshotItem[]>;
-  availableDisplayTypes: string[];
-  usedDisplayType: string | null;
+  byLocale: Record<string, DeviceScreenshotGroup[]>;
   hint?: string;
   errors: string[];
 };
 
 export async function fetchScreenshotsForAllLocales(
   localizations: { id: string; locale: string }[],
-  displayType: string,
-  concurrency = 4,
+  concurrency = 3,
 ): Promise<FetchAllScreenshotsResult> {
-  const byLocale: Record<string, ScreenshotItem[]> = {};
-  const typeSet = new Set<string>();
+  const byLocale: Record<string, DeviceScreenshotGroup[]> = {};
   const errors: string[] = [];
   let anySets = false;
   let anyShots = false;
-  let usedDisplayType: string | null = null;
   const queue = [...localizations];
 
   async function worker() {
@@ -262,14 +332,10 @@ export async function fetchScreenshotsForAllLocales(
       const loc = queue.shift();
       if (!loc) break;
 
-      const result = await fetchScreenshotsForLocalization(loc.id, displayType);
-      byLocale[loc.locale] = result.shots;
-      result.availableDisplayTypes.forEach((t) => typeSet.add(t));
+      const result = await fetchScreenshotsForLocalizationAllDevices(loc.id);
+      byLocale[loc.locale] = result.groups;
       if (result.hasSets) anySets = true;
-      if (result.shots.length > 0) anyShots = true;
-      if (result.usedDisplayType && !usedDisplayType) {
-        usedDisplayType = result.usedDisplayType;
-      }
+      if (result.groups.some((g) => g.shots.length > 0)) anyShots = true;
       if (result.error) {
         errors.push(`${loc.locale}: ${result.error}`);
       }
@@ -282,37 +348,17 @@ export async function fetchScreenshotsForAllLocales(
     ),
   );
 
-  const availableDisplayTypes = [...typeSet].sort((a, b) => {
-    const ai = DISPLAY_TYPE_PRIORITY.indexOf(
-      a as (typeof DISPLAY_TYPE_PRIORITY)[number],
-    );
-    const bi = DISPLAY_TYPE_PRIORITY.indexOf(
-      b as (typeof DISPLAY_TYPE_PRIORITY)[number],
-    );
-    const ap = ai === -1 ? 999 : ai;
-    const bp = bi === -1 ? 999 : bi;
-    return ap - bp;
-  });
-
   let hint: string | undefined;
   if (!anySets) {
     hint =
       "У этой версии в App Store Connect нет наборов скриншотов. Загрузите их в ASC для выбранной версии (Prepare for Submission).";
   } else if (!anyShots) {
-    if (!availableDisplayTypes.includes(displayType)) {
-      hint = `Для «${displayTypeLabel(displayType)}» нет набора. В ASC есть: ${availableDisplayTypes.map(displayTypeLabel).join(", ")}. Выберите другой тип устройства.`;
-    } else {
-      hint =
-        "Набор для этого размера есть, но скриншоты пустые или ещё не завершили загрузку (нет imageAsset).";
-    }
-  } else if (usedDisplayType && usedDisplayType !== displayType) {
-    hint = `Показаны скриншоты для «${displayTypeLabel(usedDisplayType)}» — для выбранного размера набора не найдено.`;
+    hint =
+      "Наборы есть, но превью пустые или загрузка в ASC ещё не завершена (нет imageAsset).";
   }
 
   return {
     byLocale,
-    availableDisplayTypes,
-    usedDisplayType,
     hint,
     errors,
   };

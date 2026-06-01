@@ -6,7 +6,6 @@ import {
   Button,
   Empty,
   Image,
-  Select,
   Space,
   Spin,
   Tabs,
@@ -15,11 +14,9 @@ import {
 } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import {
-  DISPLAY_TYPE_LABELS,
-  DISPLAY_TYPE_PRIORITY,
   displayTypeLabel,
   fetchScreenshotsForAllLocales,
-  type ScreenshotItem,
+  type DeviceScreenshotGroup,
 } from "@/lib/asc-screenshots";
 
 const { Text } = Typography;
@@ -28,60 +25,74 @@ interface Props {
   versionLocalizations: { id: string; locale: string }[];
 }
 
-const DEFAULT_DISPLAY_TYPE = "APP_IPHONE_69";
+function totalShots(groups: DeviceScreenshotGroup[]): number {
+  return groups.reduce((n, g) => n + g.shots.length, 0);
+}
 
-const STATIC_DISPLAY_OPTIONS = [
-  ...DISPLAY_TYPE_PRIORITY.map((value) => ({
-    value,
-    label: displayTypeLabel(value),
-  })),
-];
-
-function ScreenshotGallery({
-  shots,
-}: {
-  shots: ScreenshotItem[];
-}) {
-  if (shots.length === 0) {
+function ScreenshotGallery({ groups }: { groups: DeviceScreenshotGroup[] }) {
+  if (groups.length === 0) {
     return (
       <div className="flex justify-center py-12">
-        <Empty description="Нет скриншотов для этого размера" />
+        <Empty description="Нет скриншотов" />
+      </div>
+    );
+  }
+
+  const hasAnyShot = groups.some((g) => g.shots.length > 0);
+  if (!hasAnyShot) {
+    return (
+      <div className="flex justify-center py-12">
+        <Empty description="Наборы есть, превью пустые" />
       </div>
     );
   }
 
   return (
-    <div className="w-full flex justify-center">
-      <div className="flex flex-wrap gap-4 justify-center max-w-5xl py-2">
-        {shots.map((shot) => (
-          <div key={shot.id} className="flex flex-col items-center w-[120px]">
-            {shot.url ? (
-              <Image
-                src={shot.url}
-                width={110}
-                alt={shot.fileName}
-                className="rounded"
-              />
-            ) : (
-              <div className="w-[110px] h-[200px] bg-gray-100 rounded flex flex-col items-center justify-center text-xs text-center p-1 gap-1">
-                <span>{shot.fileName}</span>
-                {shot.deliveryState && (
-                  <Tag className="m-0 text-[10px]">{shot.deliveryState}</Tag>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="w-full overflow-y-auto max-h-[calc(100vh-280px)] py-2 space-y-8">
+      {groups.map((group) => {
+        if (group.shots.length === 0) return null;
+
+        return (
+          <section key={group.displayType}>
+            <Text strong className="block mb-3">
+              {displayTypeLabel(group.displayType)}
+            </Text>
+            <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2">
+              {group.shots.map((shot) => (
+                <div
+                  key={shot.id}
+                  className="flex shrink-0 flex-col items-center w-[120px]"
+                >
+                    {shot.url ? (
+                      <Image
+                        src={shot.url}
+                        width={110}
+                        alt={shot.fileName}
+                        className="rounded"
+                      />
+                    ) : (
+                      <div className="w-[110px] h-[200px] bg-gray-100 rounded flex flex-col items-center justify-center text-xs text-center p-1 gap-1">
+                        <span>{shot.fileName}</span>
+                        {shot.deliveryState && (
+                          <Tag className="m-0 text-[10px]">
+                            {shot.deliveryState}
+                          </Tag>
+                        )}
+                      </div>
+                    )}
+                  </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
 export function ScreenshotsPanel({ versionLocalizations }: Props) {
-  const [displayType, setDisplayType] = useState(DEFAULT_DISPLAY_TYPE);
-  const [discoveredTypes, setDiscoveredTypes] = useState<string[]>([]);
   const [shotsByLocale, setShotsByLocale] = useState<
-    Record<string, ScreenshotItem[]>
+    Record<string, DeviceScreenshotGroup[]>
   >({});
   const [loading, setLoading] = useState(false);
   const [hint, setHint] = useState<string | undefined>();
@@ -106,19 +117,6 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
     [sortedLocales],
   );
 
-  const displayTypeOptions = useMemo(() => {
-    const known = new Set<string>(
-      STATIC_DISPLAY_OPTIONS.map((o) => o.value),
-    );
-    const extra = discoveredTypes
-      .filter((t) => !known.has(t))
-      .map((value) => ({
-        value,
-        label: DISPLAY_TYPE_LABELS[value] ?? value,
-      }));
-    return [...STATIC_DISPLAY_OPTIONS, ...extra];
-  }, [discoveredTypes]);
-
   const loadAll = useCallback(async () => {
     if (!sortedLocales.length) {
       setShotsByLocale({});
@@ -133,37 +131,22 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
     setLoadErrors([]);
 
     try {
-      const result = await fetchScreenshotsForAllLocales(
-        sortedLocales,
-        displayType,
-      );
+      const result = await fetchScreenshotsForAllLocales(sortedLocales);
       if (seq !== loadSeq.current) return;
 
       setShotsByLocale(result.byLocale);
-      setDiscoveredTypes(result.availableDisplayTypes);
       setHint(result.hint);
       setLoadErrors(result.errors);
-
-      if (
-        result.availableDisplayTypes.length > 0 &&
-        !result.availableDisplayTypes.includes(displayType)
-      ) {
-        const fallback =
-          result.usedDisplayType ?? result.availableDisplayTypes[0];
-        if (fallback && fallback !== displayType) {
-          setDisplayType(fallback);
-        }
-      }
     } finally {
       if (seq === loadSeq.current) {
         setLoading(false);
       }
     }
-  }, [sortedLocales, displayType]);
+  }, [sortedLocales]);
 
   useEffect(() => {
     void loadAll();
-  }, [localizationKey, displayType, loadAll]);
+  }, [localizationKey, loadAll]);
 
   useEffect(() => {
     if (!sortedLocales.length) {
@@ -179,23 +162,30 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
   const tabItems = useMemo(
     () =>
       sortedLocales.map((loc) => {
-        const shots = shotsByLocale[loc.locale] ?? [];
+        const groups = shotsByLocale[loc.locale] ?? [];
+        const count = totalShots(groups);
         return {
           key: loc.id,
           label: (
             <Space size={4}>
               <span>{loc.locale}</span>
-              {shots.length > 0 && (
+              {count > 0 && (
                 <Text type="secondary" className="text-xs">
-                  {shots.length}
+                  {count}
                 </Text>
               )}
             </Space>
           ),
-          children: <ScreenshotGallery shots={shots} />,
+          children: loading ? (
+            <div className="flex justify-center py-16">
+              <Spin size="large" description="Загрузка скриншотов…" />
+            </div>
+          ) : (
+            <ScreenshotGallery groups={groups} />
+          ),
         };
       }),
-    [sortedLocales, shotsByLocale],
+    [sortedLocales, shotsByLocale, loading],
   );
 
   if (!sortedLocales.length) {
@@ -206,13 +196,6 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
 
   return (
     <div>
-      <Alert
-        className="mb-4"
-        type="info"
-        showIcon
-        title="Скриншоты по локалям. Выберите тип устройства, если превью пустые."
-      />
-
       {hint && !loading && (
         <Alert className="mb-4" type="warning" showIcon title={hint} />
       )}
@@ -227,38 +210,20 @@ export function ScreenshotsPanel({ versionLocalizations }: Props) {
         />
       )}
 
-      <Space wrap className="mb-4 w-full justify-center">
-        <div>
-          <Text type="secondary" className="block text-xs mb-1">
-            Тип устройства
-          </Text>
-          <Select
-            value={displayType}
-            onChange={setDisplayType}
-            options={displayTypeOptions}
-            style={{ minWidth: 240 }}
-          />
-        </div>
-        <Button icon={<ReloadOutlined />} onClick={loadAll} loading={loading}>
-          Обновить
-        </Button>
-      </Space>
-
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Spin size="large" description="Загрузка скриншотов…" />
-        </div>
-      ) : (
-        <Tabs
-          activeKey={activeLocaleId}
-          onChange={setActiveLocaleId}
-          items={tabItems}
-          type="card"
-          tabBarGutter={8}
-          className="locale-tabs-editor min-h-0 [&_.ant-tabs-nav]:mb-0 [&_.ant-tabs-nav-wrap]:overflow-auto"
-          destroyOnHidden={false}
-        />
-      )}
+      <Tabs
+        activeKey={activeLocaleId}
+        onChange={setActiveLocaleId}
+        items={tabItems}
+        type="card"
+        tabBarGutter={8}
+        tabBarExtraContent={
+          <Button icon={<ReloadOutlined />} onClick={loadAll} loading={loading}>
+            Обновить
+          </Button>
+        }
+        className="locale-tabs-editor min-h-0 [&_.ant-tabs-nav]:mb-0 [&_.ant-tabs-nav-wrap]:overflow-auto"
+        destroyOnHidden={false}
+      />
     </div>
   );
 }
