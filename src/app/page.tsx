@@ -17,7 +17,7 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 import { CredentialsModal } from "@/components/CredentialsModal";
-import { LocaleMatrixEditor } from "@/components/LocaleMatrixEditor";
+import { LocaleTabsEditor } from "@/components/LocaleTabsEditor";
 import { ScreenshotsPanel } from "@/components/ScreenshotsPanel";
 import { loadCredentials } from "@/lib/credentials-storage";
 import {
@@ -262,7 +262,7 @@ export default function HomePage() {
         </Button>
       </Header>
 
-      <Content className="p-6 max-w-[100vw]">
+      <Content className="p-6 max-w-[100vw] min-h-0 flex-1 overflow-hidden flex flex-col">
         {!hasCredentials && (
           <Alert
             type="warning"
@@ -337,13 +337,14 @@ export default function HomePage() {
 
         {versionId && appId && (
           <Tabs
+            className="flex-1 min-h-0 [&_.ant-tabs-content]:h-full [&_.ant-tabs-tabpane]:h-full"
             defaultActiveKey="version"
             items={[
               {
                 key: "version",
-                label: `Версия (${versionRows.length} локалей)`,
+                label: "Версия",
                 children: (
-                  <LocaleMatrixEditor
+                  <LocaleTabsEditor
                     locales={versionRows}
                     fields={VERSION_TEXT_FIELDS}
                     getValue={(row, field) =>
@@ -365,9 +366,9 @@ export default function HomePage() {
               },
               {
                 key: "appinfo",
-                label: `App Info (${appInfoRows.length} локалей)`,
+                label: "App Info",
                 children: (
-                  <LocaleMatrixEditor
+                  <LocaleTabsEditor
                     locales={appInfoRows}
                     fields={APP_INFO_TEXT_FIELDS}
                     getValue={(row, field) =>
